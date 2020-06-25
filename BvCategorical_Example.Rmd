@@ -1,0 +1,185 @@
+---
+title: "BvCategorical Example"
+author: "Aaron J. Molstad (amolstad@ufl.edu)"
+date: "6/25/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+In this document, we provide a short tutorial on how to use the $\texttt{BvCategorical}$ R package. **If you encounter any errors or strange behavior, please report the issue at https://github.com/ajmolstad/BvCategorical**. We start by downloading this package from GitHub.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load functions, include=FALSE}
+library(Matrix)
+library(MASS)
+source("~/Documents/GitHub/BvMultinom/R/BvCategorical_Functions.R")
+```
+First, we install the $\texttt{BvCategorical}$ R package from GitHub. 
+```{r githubDL, eval=FALSE}
+install.packages("devtools")
+library(devtools)
+devtools::install_github("ajmolstad/BvCategorical")
+library(BvCategorical)
+```
+## Data generating model
+
+First, we generate data from the bivariate categorical response regression model. Here, the responses are $J$-category and $K$-category multinomial random variables with a single trial per subject. Generalizing to multiple trials per subject is trivial: users need only append additional rows to $X$ and $Y$ so that the data are formatted as if there were only a single trial per subject. To keep computing times short, we use $J=3$ and $K=2$ in the following example. 
+
+Recall, under the bivariate multinomial logistic regression model, $\boldsymbol{\beta} \in \mathbb{R}^{p + 1 \times J \times K}$ where 
+$$ P(Y_{1i} = j, Y_{2i} = k \mid x_i) = \frac{\exp\left(x_i'\boldsymbol{\beta}_{\cdot, j, k} \right)}{\sum_{s,t} \exp\left(x_i'\boldsymbol{\beta}_{\cdot, s, t} \right)}, \quad\quad(i,j,k) \in \left\{1, \dots, n\right\} \times \left\{1, \dots, J\right\} \times \left\{1,\dots, K\right\}.$$
+where $x_i = (1, x_{1i}, \dots, x_{pi})$ for $i=1, \dots, n$. 
+
+In the following, we generate $\boldsymbol{\beta}$ so that six variables modify the joint probability mass function, i.e., they uniquely modify $P(Y_{1i} = j, Y_{2i} = k \mid x_i)$; four modify only the marginal probabilities $P(Y_{1i} = j\mid x_i)$ and $P(Y_{2i} = k \mid x_i)$, and the rest do not affect the response. 
+
+
+```{r generate data, include = TRUE, cache = TRUE}
+sessionInfo()
+# --------------------------------
+# Preliminaries
+# --------------------------------
+set.seed(10)
+p <- 200
+n <- 500
+J <- 3 
+K <- 2
+ntest <- 1e4
+Results <- NULL
+
+SigmaX <- matrix(0, nrow=p, ncol=p)
+for(jj in 1:p){
+  for(kk in 1:p){
+    SigmaX[jj,kk] <- .5^abs(jj-kk)
+  }
+}
+eo <- eigen(SigmaX) 
+SigmaXsqrt <- eo$vec%*%diag(eo$val^.5)%*%t(eo$vec)
+
+X <- matrix(rnorm(n*p), nrow=n)%*%SigmaXsqrt
+Xtest <- matrix(rnorm(ntest*p), nrow=ntest)%*%SigmaXsqrt
+
+# generated data -------------
+X <- matrix(rnorm(n*p), nrow=n)%*%SigmaXsqrt
+Xtest <- matrix(rnorm(ntest*p), nrow=ntest)%*%SigmaXsqrt
+
+beta <- matrix(0, nrow=p, ncol=J*K)
+temp <- sample(1:p, 10)
+
+# joint probabilities -------------
+for(j in 1:6){
+  beta[temp[j],] <- runif(6, -3, 3)
+}
+  #  marginal probabilities only ---
+for(j in 7:10){
+  temp1 <- runif(4, -3, 3)
+  beta[temp[j],] <- c(-temp1[4] + temp1[3] + temp1[1], temp1[1], temp1[2], temp1[3], temp1[4], -temp1[1]+ temp1[4] + temp1[2])
+}
+  
+lleval <- exp(crossprod(t(X), beta))
+Pmat <- lleval/(rowSums(lleval)%*%t(rep(1, J*K)))
+Ymat <- matrix(0, nrow=n, ncol=J*K)
+Y <- list(NA)
+Y[[1]] <- rep(0, n)
+Y[[2]] <- rep(0, n)
+refClasses <- rbind(c(1:J, 1:J), c(rep(1, J), rep(2, J)))
+for(k in 1:n){
+  Ymat[k,] <- rmultinom(1, 1, Pmat[k,])
+  Y[[1]][k] <- refClasses[1,which(Ymat[k,]==1)]
+  Y[[2]][k] <- refClasses[2,which(Ymat[k,]==1)]
+}
+
+lleval <- exp(crossprod(t(Xtest), beta))
+PmatTest <- lleval/(rowSums(lleval)%*%t(rep(1, J*K)))
+YmatTest <- matrix(0, nrow=ntest, ncol=J*K)
+Ytest <- list(NA)
+Ytest[[1]] <- rep(0, ntest)
+Ytest[[2]] <- rep(0, ntest)
+refClasses <- rbind(c(1:J, 1:J), c(rep(1, J), rep(2, J)))
+for(k in 1:ntest){
+  YmatTest[k,] <- rmultinom(1, 1, PmatTest[k,])
+  Ytest[[1]][k] <- refClasses[1,which(YmatTest[k,]==1)]
+  Ytest[[2]][k] <- refClasses[2,which(YmatTest[k,]==1)]
+}
+
+```
+
+## Model fitting
+To fit the model, use the function $\texttt{BvCat.cv}$.The arguments are as follows:
+
+  - $\texttt{X}$: an $n \times p$ matrix of predictors, unstandardized. 
+  - $\texttt{Y}$: a list with two components, each corresponding to one of the two response variables. Elements of each component should be integers from $1$ to $G$ where $G$ is the number of response categories for that response. 
+  - $\texttt{ngamma}$: the number of candidate tuning parameters $\gamma$ to consider in cross-validation/model fitting. 
+  - $\texttt{lambda.vec}$: a vector of candidate $\lambda$ values to consider in cross-validation/model fitting. 
+  - $\texttt{nfolds}$: the number of folds to use for cross-validation. If one would rather not perform cross-validation, setting $\texttt{nfolds = NULL}$ fits the model for each of the pairs $(\gamma, \lambda)$, but does not perform cross-validation. 
+  - $\texttt{delta}$: a parameter between 0 and 1 indicating the ratio from largest to smallest candidate $\gamma$ value, i.e., $\min{\gamma} = \delta \max{\gamma}$
+  - $\texttt{standardize}$: $\texttt{TRUE/FALSE}$ should the predictors be standardized for model fitting?
+   - $\texttt{tol}$: Convergence tolerance for proximal gradient descent algorithm (change in objective function value across previous three iterations)/
+   - $\texttt{quiet}$:  $\texttt{TRUE/FALSE}$ Print some progress?
+   - $\texttt{inner.quiet}$: $\texttt{TRUE/FALSE}$ Print updates from proximal gradient descent algorithm? Should be used only for diagnosing tolerance since output can be verbose. 
+
+For more on formatting, we suggest following the example data generating procedure above. 
+```{r fit model example, cache = TRUE, include = TRUE}
+modfit <- BvCat.cv(X, Y, ngamma = 10, 
+                  lambda.vec = rev(10^seq(-4, -1, length=5)), 
+                  nfolds = 5, delta = .05, standardize = TRUE, 
+                  tol = 1e-10,  quiet = FALSE, inner.quiet = TRUE)
+```
+Once we have fit the model, we can examine the output. 
+```{r output, cache=TRUE, include = TRUE}
+str(modfit)
+```
+The output contains the following (omitting those with obvious meaning):
+
+- $\texttt{beta}:$ a sparse matrix containing the estimated regression coefficients for all pairs of tuning parameters. $\textbf{Do not}$ use these directly as they are not properly rescaled if $\texttt{standardized = TRUE}$: rather, extract coefficients using $\texttt{BvCat.coef}$ below. 
+- $D \in \mathbb{R}^{JK \times \binom{J}{2}\binom{K}{2}}$ is the matrix used to impose the log-odds penalty. 
+- $\texttt{errs.joint}$: the joint misclassification rate for the $\texttt{nfolds}$ for each candidate pair of tuning parameters
+- $\texttt{deviance}:$ the deviance for each of the $\texttt{nfolds}$
+- $\texttt{lambda.min.joint}$ the $\lambda$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$. 
+- $\texttt{gamma.min.joint}$ the $\gamma$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$. 
+- $\texttt{X.mean}$ and $\texttt{X.sd}$: the mean and standard deviation of the $p$ predictor variables (used for standardization/prediction in other functions).
+- $\texttt{lambda.vec}$ and $\texttt{gamma.vec}$: the candidate tuning parameters $\lambda$ and $\gamma$ used for model fitting. 
+
+## Prediction and coefficient extraction
+With the fitted model, an object of type $\texttt{BvCat}$, we can first examine the misclassification errors averaged over the folds: 
+```{r fit model innerquiet,cache=TRUE, include = TRUE}
+library(lattice)
+levelplot(t(apply(modfit$errs.joint, c(1,2), mean)), xlab=expression(paste(gamma)), ylab=expression(paste(lambda)), main="Cross-validated misclassification rate", col.regions=grey((100:0)/100))
+```
+
+Then, we can predict the classes for a new set of predictors, $\texttt{Xtest}$, using the $\texttt{BvCat.predict}$ function. By default, $\texttt{BvCat.predict}$ uses the tuning parameter pair which had the minimum average misclassification rate in cross-validation. 
+```{r preds, include = TRUE, cache=TRUE}
+outPred <- BvCat.predict(Xtest = Xtest, modfit, type="class") # prediction using tuning parameters which minimized classification error
+```
+
+We can also perform prediction using the fitted model for other tuning parameter pairs:
+```{r preds2, include = TRUE, cache=TRUE}
+devInds <- which(apply(modfit$deviance, c(1,2), mean) == min(apply(modfit$deviance, c(1,2), mean)), arr.ind=TRUE)
+outPred.dev <- BvCat.predict(Xtest = Xtest, modfit, lambda = modfit$lambda.vec[devInds[1,1]], gamma = modfit$gamma.vec[devInds[1,2]]) # prediction using tuning parameters which minimized classification error
+
+preds.mat <- apply(outPred$preds, 1, function(x){(x[1]+(J*(x[2]-1)))})
+misclass.joint <- sum(apply(YmatTest, 1, which.max) != preds.mat)/length(Ytest[[1]])
+cat(misclass.joint, "\n")
+  
+preds.dev.mat <- apply(outPred.dev$preds, 1, function(x){(x[1]+(J*(x[2]-1)))})
+misclass.joint.dev <- sum(apply(YmatTest, 1, which.max) != preds.dev.mat)/length(Ytest[[1]])
+cat(misclass.joint.dev, "\n")
+```
+
+Finally, we can extract the regression coefficients using $\texttt{BvCat.coef}$. When we use the argument $\texttt{type="matrix"}$, we get the matricized version of $\hat{\boldsymbol{\beta}}$, $\hat\beta$, which is given by
+$$ \hat\beta_{l,f(j,k)} = \hat{\boldsymbol{\beta}}_{l,j,k}, \quad\quad (l,j,k) \in \left\{1, \dots, p\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.$$
+where $f(j,k) = (k-1)J + j$ for $(j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.$ Note that $\boldsymbol{\beta}_0$ denotes the intercept term.
+
+```{r getCoef, include = TRUE, cache=TRUE}
+outBeta <- BvCat.coef(modfit, type="matrix")
+str(outBeta)
+```
+
+Using the argument $\texttt{type="array"}$ instead returns $\hat{\boldsymbol{\beta}}$, the tensor-valued estimate. 
+```{r getCoefArray, include = TRUE, cache=TRUE}
+outBetaArray <- BvCat.coef(modfit, type="array")
+str(outBetaArray)
+```
+
+
+

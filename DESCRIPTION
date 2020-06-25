@@ -1,0 +1,11 @@
+Package: BvCategorical
+Type: Package
+Title: Log-odds penalized bivariate categorical response regression
+Version: 0.1
+Date: 2020-05-08
+Author: Aaron J. Molstad <amolstad@ufl.edu>
+Maintainer: Aaron J. Molstad <amolstad@ufl.edu>
+Description: Perform cross-validation, prediction, and extract coefficients from fitted models for the log-odds penalized bivariate categorical response regression model. 
+License: GPL-2
+LazyData: TRUE
+NeedsCompilation: yes

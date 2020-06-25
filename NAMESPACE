@@ -1,0 +1,5 @@
+export(BvCat.cv)
+export(BvCat.coef)
+export(BvCat.predict)
+
+importFrom("Matrix", "Matrix")
