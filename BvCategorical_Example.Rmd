@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load functions, include=FALSE}
 library(Matrix)
 library(MASS)
-source("~/Documents/GitHub/BvMultinom/R/BvCategorical_Functions.R")
+source("~/Documents/GitHub/BvCategorical/R/BvCategorical_Functions.R")
 ```
 First, we install the $\texttt{BvCategorical}$ R package from GitHub. 
 ```{r githubDL, eval=FALSE}

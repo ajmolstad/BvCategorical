@@ -242,8 +242,7 @@ BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6,
 			beta.up <- Atemp - (L)*(grad)
 			beta.temp <- matrix(0, nrow=p+1, ncol=J*K)
 			beta.temp[1,] <- beta.up[1,]
-			beta.temp[2:(p+1),1:(J*K)] <- genProx(beta.up[2:(p+1),1:(J*K)], 
-																				 beta.km1[-1,], gamma, lambda, L, DtDinvD, PDperp, DtD, D)
+			beta.temp[2:(p+1),1:(J*K)] <- genProx(beta.up[2:(p+1),1:(J*K)], beta.km1[-1,], gamma, lambda, L, DtDinvD, PDperp, DtD, D)
 			templik <- eval_lik(X, beta.temp, Ymat)     
 
 			if(L == L0){
@@ -255,7 +254,7 @@ BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6,
 
 			} else {
 				
-				if(templik < (lik + sum(diag(crossprod(grad, beta.temp - Atemp))) + 1/(2*L)*sum((beta.temp -Atemp)^2))){
+				if(templik < (lik + sum(diag(crossprod(grad, beta.temp - Atemp))) + (1/(2*L))*sum((beta.temp -Atemp)^2))){
 						
 					linesearch <- FALSE
 					beta.k <- beta.temp
