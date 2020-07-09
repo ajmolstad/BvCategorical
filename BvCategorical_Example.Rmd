@@ -1,12 +1,12 @@
 ---
 title: "BvCategorical Example"
 author: "Aaron J. Molstad (amolstad@ufl.edu)"
-date: "6/25/2020"
+date: "7/5/2020"
 output:
   html_document: default
   pdf_document: default
 ---
-In this document, we provide a short tutorial on how to use the $\texttt{BvCategorical}$ R package. **If you encounter any errors or strange behavior, please report the issue at https://github.com/ajmolstad/BvCategorical**. We start by downloading this package from GitHub.
+In this document, we provide a short tutorial on how to use the $\texttt{BvCategorical}$ R package. **If you encounter any errors or strange behavior, please report the issue at https://github.com/ajmolstad/BvCategorical**. 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -25,7 +25,7 @@ library(BvCategorical)
 ```
 ## Data generating model
 
-First, we generate data from the bivariate categorical response regression model. Here, the responses are $J$-category and $K$-category multinomial random variables with a single trial per subject. Generalizing to multiple trials per subject is trivial: users need only append additional rows to $X$ and $Y$ so that the data are formatted as if there were only a single trial per subject. To keep computing times short, we use $J=3$ and $K=2$ in the following example. 
+Next, we generate data from the bivariate categorical response regression model. Here, the responses are $J$-category and $K$-category multinomial random variables with a single trial per subject. Generalizing to multiple trials per subject is trivial: users need only append additional rows to $X$ and $Y$ so that the data are formatted as if there were only a single trial per subject. To keep computing times short, we use $J=3$ and $K=2$ in the following example. 
 
 Recall, under the bivariate multinomial logistic regression model, $\boldsymbol{\beta} \in \mathbb{R}^{p + 1 \times J \times K}$ where 
 $$ P(Y_{1i} = j, Y_{2i} = k \mid x_i) = \frac{\exp\left(x_i'\boldsymbol{\beta}_{\cdot, j, k} \right)}{\sum_{s,t} \exp\left(x_i'\boldsymbol{\beta}_{\cdot, s, t} \right)}, \quad\quad(i,j,k) \in \left\{1, \dots, n\right\} \times \left\{1, \dots, J\right\} \times \left\{1,\dots, K\right\}.$$
@@ -107,21 +107,21 @@ for(k in 1:ntest){
 ## Model fitting
 To fit the model, use the function $\texttt{BvCat.cv}$.The arguments are as follows:
 
-  - $\texttt{X}$: an $n \times p$ matrix of predictors, unstandardized. 
-  - $\texttt{Y}$: a list with two components, each corresponding to one of the two response variables. Elements of each component should be integers from $1$ to $G$ where $G$ is the number of response categories for that response. 
-  - $\texttt{ngamma}$: the number of candidate tuning parameters $\gamma$ to consider in cross-validation/model fitting. 
-  - $\texttt{lambda.vec}$: a vector of candidate $\lambda$ values to consider in cross-validation/model fitting. 
-  - $\texttt{nfolds}$: the number of folds to use for cross-validation. If one would rather not perform cross-validation, setting $\texttt{nfolds = NULL}$ fits the model for each of the pairs $(\gamma, \lambda)$, but does not perform cross-validation. 
-  - $\texttt{delta}$: a parameter between 0 and 1 indicating the ratio from largest to smallest candidate $\gamma$ value, i.e., $\min{\gamma} = \delta \max{\gamma}$
-  - $\texttt{standardize}$: $\texttt{TRUE/FALSE}$ should the predictors be standardized for model fitting?
-   - $\texttt{tol}$: Convergence tolerance for proximal gradient descent algorithm (change in objective function value across previous three iterations)/
-   - $\texttt{quiet}$:  $\texttt{TRUE/FALSE}$ Print some progress?
-   - $\texttt{inner.quiet}$: $\texttt{TRUE/FALSE}$ Print updates from proximal gradient descent algorithm? Should be used only for diagnosing tolerance since output can be verbose. 
+  - $\texttt{X}$: an $n \times p$ matrix of predictors, unstandardized. Should not include an intercept -- this is done internally;
+  - $\texttt{Y}$: a list with two components, each corresponding to one of the two response variables. Elements of each component should be integers from $1$ to $K$ where $K$ is the number of response categories for that response; 
+  - $\texttt{ngamma}$: the number of candidate tuning parameters $\gamma$ to consider in cross-validation/model fitting; 
+  - $\texttt{lambda.vec}$: a vector of candidate $\lambda$ values to consider in cross-validation/model fitting; 
+  - $\texttt{nfolds}$: the number of folds to use for cross-validation. If one would rather not perform cross-validation, setting $\texttt{nfolds = NULL}$ fits the model for each of the pairs $(\gamma, \lambda)$, but does not perform cross-validation; 
+  - $\texttt{delta}$: a parameter between 0 and 1 indicating the ratio from largest to smallest candidate $\gamma$ value, i.e., $\min{\gamma} = \delta \max{\gamma}$;
+  - $\texttt{standardize}$: $\texttt{TRUE/FALSE}$ indicating whether predictors should be standardized for model fitting;
+   - $\texttt{tol}$: Convergence tolerance for proximal gradient descent algorithm (change in objective function value across previous three iterations);
+   - $\texttt{quiet}$:  $\texttt{TRUE/FALSE}$ indicating whether progress should be printed after each model fit for all pairs $(\gamma, \lambda)$;
+   - $\texttt{inner.quiet}$: $\texttt{TRUE/FALSE}$ indicating whether progress should be printed after each iterations of the proximal gradient descent algorithm -- note that this argument should only be $\texttt{TRUE}$ if users are diagnosing covergence tolerance as output can be quite verbose. 
 
 For more on formatting, we suggest following the example data generating procedure above. 
 ```{r fit model example, cache = TRUE, include = TRUE}
 modfit <- BvCat.cv(X, Y, ngamma = 10, 
-                  lambda.vec = rev(10^seq(-4, -1, length=5)), 
+                  lambda.vec = 10^seq(-1, -4, length=5), 
                   nfolds = 5, delta = .05, standardize = TRUE, 
                   tol = 1e-10,  quiet = FALSE, inner.quiet = TRUE)
 ```
@@ -131,13 +131,13 @@ str(modfit)
 ```
 The output contains the following (omitting those with obvious meaning):
 
-- $\texttt{beta}:$ a sparse matrix containing the estimated regression coefficients for all pairs of tuning parameters. $\textbf{Do not}$ use these directly as they are not properly rescaled if $\texttt{standardized = TRUE}$: rather, extract coefficients using $\texttt{BvCat.coef}$ below. 
-- $D \in \mathbb{R}^{JK \times \binom{J}{2}\binom{K}{2}}$ is the matrix used to impose the log-odds penalty. 
-- $\texttt{errs.joint}$: the joint misclassification rate for the $\texttt{nfolds}$ for each candidate pair of tuning parameters
-- $\texttt{deviance}:$ the deviance for each of the $\texttt{nfolds}$
-- $\texttt{lambda.min.joint}$ the $\lambda$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$. 
-- $\texttt{gamma.min.joint}$ the $\gamma$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$. 
-- $\texttt{X.mean}$ and $\texttt{X.sd}$: the mean and standard deviation of the $p$ predictor variables (used for standardization/prediction in other functions).
+- $\texttt{beta}:$ a sparse matrix containing the estimated regression coefficients for all pairs of tuning parameters. $\textbf{Do not}$ use these directly as they are not properly rescaled if $\texttt{standardized = TRUE}$: rather, extract coefficients using $\texttt{BvCat.coef}$ below;
+- $D \in \mathbb{R}^{JK \times \binom{J}{2}\binom{K}{2}}$ is the matrix used to impose the log-odds penalty;
+- $\texttt{errs.joint}$: the joint misclassification rate for the $\texttt{nfolds}$ for each candidate pair of tuning parameters;
+- $\texttt{deviance}:$ the deviance for each of the $\texttt{nfolds}$;
+- $\texttt{lambda.min.joint}$ the $\lambda$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$;
+- $\texttt{gamma.min.joint}$ the $\gamma$ value leading to smallest average misclassification rate over the $\texttt{nfolds}$;
+- $\texttt{X.mean}$ and $\texttt{X.sd}$: the mean and standard deviation of the $p$ predictor variables (used for standardization/prediction in other functions);
 - $\texttt{lambda.vec}$ and $\texttt{gamma.vec}$: the candidate tuning parameters $\lambda$ and $\gamma$ used for model fitting. 
 
 ## Prediction and coefficient extraction
@@ -167,7 +167,7 @@ cat(misclass.joint.dev, "\n")
 ```
 
 Finally, we can extract the regression coefficients using $\texttt{BvCat.coef}$. When we use the argument $\texttt{type="matrix"}$, we get the matricized version of $\hat{\boldsymbol{\beta}}$, $\hat\beta$, which is given by
-$$ \hat\beta_{l,f(j,k)} = \hat{\boldsymbol{\beta}}_{l,j,k}, \quad\quad (l,j,k) \in \left\{1, \dots, p\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.$$
+$$ \hat\beta_{m,f(j,k)} = \hat{\boldsymbol{\beta}}_{m,j,k}, \quad\quad (m,j,k) \in \left\{1, \dots, p+1\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.$$
 where $f(j,k) = (k-1)J + j$ for $(j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.$ Note that $\boldsymbol{\beta}_0$ denotes the intercept term.
 
 ```{r getCoef, include = TRUE, cache=TRUE}
@@ -175,7 +175,7 @@ outBeta <- BvCat.coef(modfit, type="matrix")
 str(outBeta)
 ```
 
-Using the argument $\texttt{type="array"}$ instead returns $\hat{\boldsymbol{\beta}}$, the tensor-valued estimate. 
+Using the argument $\texttt{type="array"}$ instead returns $\hat{\boldsymbol{\beta}}$, the arra-valued estimate. 
 ```{r getCoefArray, include = TRUE, cache=TRUE}
 outBetaArray <- BvCat.coef(modfit, type="array")
 str(outBetaArray)

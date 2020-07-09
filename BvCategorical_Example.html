@@ -364,12 +364,12 @@ summary {
 
 <h1 class="title toc-ignore">BvCategorical Example</h1>
 <h4 class="author">Aaron J. Molstad (<a href="mailto:amolstad@ufl.edu" class="email">amolstad@ufl.edu</a>)</h4>
-<h4 class="date">6/25/2020</h4>
+<h4 class="date">7/5/2020</h4>
 
 </div>
 
 
-<p>In this document, we provide a short tutorial on how to use the <span class="math inline">\(\texttt{BvCategorical}\)</span> R package. <strong>If you encounter any errors or strange behavior, please report the issue at <a href="https://github.com/ajmolstad/BvCategorical" class="uri">https://github.com/ajmolstad/BvCategorical</a></strong>. We start by downloading this package from GitHub.</p>
+<p>In this document, we provide a short tutorial on how to use the <span class="math inline">\(\texttt{BvCategorical}\)</span> R package. <strong>If you encounter any errors or strange behavior, please report the issue at <a href="https://github.com/ajmolstad/BvCategorical" class="uri">https://github.com/ajmolstad/BvCategorical</a></strong>.</p>
 <p>First, we install the <span class="math inline">\(\texttt{BvCategorical}\)</span> R package from GitHub.</p>
 <pre class="r"><code>install.packages(&quot;devtools&quot;)
 library(devtools)
@@ -377,7 +377,7 @@ devtools::install_github(&quot;ajmolstad/BvCategorical&quot;)
 library(BvCategorical)</code></pre>
 <div id="data-generating-model" class="section level2">
 <h2>Data generating model</h2>
-<p>First, we generate data from the bivariate categorical response regression model. Here, the responses are <span class="math inline">\(J\)</span>-category and <span class="math inline">\(K\)</span>-category multinomial random variables with a single trial per subject. Generalizing to multiple trials per subject is trivial: users need only append additional rows to <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> so that the data are formatted as if there were only a single trial per subject. To keep computing times short, we use <span class="math inline">\(J=3\)</span> and <span class="math inline">\(K=2\)</span> in the following example.</p>
+<p>Next, we generate data from the bivariate categorical response regression model. Here, the responses are <span class="math inline">\(J\)</span>-category and <span class="math inline">\(K\)</span>-category multinomial random variables with a single trial per subject. Generalizing to multiple trials per subject is trivial: users need only append additional rows to <span class="math inline">\(X\)</span> and <span class="math inline">\(Y\)</span> so that the data are formatted as if there were only a single trial per subject. To keep computing times short, we use <span class="math inline">\(J=3\)</span> and <span class="math inline">\(K=2\)</span> in the following example.</p>
 <p>Recall, under the bivariate multinomial logistic regression model, <span class="math inline">\(\boldsymbol{\beta} \in \mathbb{R}^{p + 1 \times J \times K}\)</span> where <span class="math display">\[ P(Y_{1i} = j, Y_{2i} = k \mid x_i) = \frac{\exp\left(x_i'\boldsymbol{\beta}_{\cdot, j, k} \right)}{\sum_{s,t} \exp\left(x_i'\boldsymbol{\beta}_{\cdot, s, t} \right)}, \quad\quad(i,j,k) \in \left\{1, \dots, n\right\} \times \left\{1, \dots, J\right\} \times \left\{1,\dots, K\right\}.\]</span> where <span class="math inline">\(x_i = (1, x_{1i}, \dots, x_{pi})\)</span> for <span class="math inline">\(i=1, \dots, n\)</span>.</p>
 <p>In the following, we generate <span class="math inline">\(\boldsymbol{\beta}\)</span> so that six variables modify the joint probability mass function, i.e., they uniquely modify <span class="math inline">\(P(Y_{1i} = j, Y_{2i} = k \mid x_i)\)</span>; four modify only the marginal probabilities <span class="math inline">\(P(Y_{1i} = j\mid x_i)\)</span> and <span class="math inline">\(P(Y_{2i} = k \mid x_i)\)</span>, and the rest do not affect the response.</p>
 <pre class="r"><code>sessionInfo()</code></pre>
@@ -473,20 +473,20 @@ for(k in 1:ntest){
 <h2>Model fitting</h2>
 <p>To fit the model, use the function <span class="math inline">\(\texttt{BvCat.cv}\)</span>.The arguments are as follows:</p>
 <ul>
-<li><span class="math inline">\(\texttt{X}\)</span>: an <span class="math inline">\(n \times p\)</span> matrix of predictors, unstandardized.</li>
-<li><span class="math inline">\(\texttt{Y}\)</span>: a list with two components, each corresponding to one of the two response variables. Elements of each component should be integers from <span class="math inline">\(1\)</span> to <span class="math inline">\(G\)</span> where <span class="math inline">\(G\)</span> is the number of response categories for that response.</li>
-<li><span class="math inline">\(\texttt{ngamma}\)</span>: the number of candidate tuning parameters <span class="math inline">\(\gamma\)</span> to consider in cross-validation/model fitting.</li>
-<li><span class="math inline">\(\texttt{lambda.vec}\)</span>: a vector of candidate <span class="math inline">\(\lambda\)</span> values to consider in cross-validation/model fitting.</li>
-<li><span class="math inline">\(\texttt{nfolds}\)</span>: the number of folds to use for cross-validation. If one would rather not perform cross-validation, setting <span class="math inline">\(\texttt{nfolds = NULL}\)</span> fits the model for each of the pairs <span class="math inline">\((\gamma, \lambda)\)</span>, but does not perform cross-validation.</li>
-<li><span class="math inline">\(\texttt{delta}\)</span>: a parameter between 0 and 1 indicating the ratio from largest to smallest candidate <span class="math inline">\(\gamma\)</span> value, i.e., <span class="math inline">\(\min{\gamma} = \delta \max{\gamma}\)</span></li>
-<li><span class="math inline">\(\texttt{standardize}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> should the predictors be standardized for model fitting?</li>
-<li><span class="math inline">\(\texttt{tol}\)</span>: Convergence tolerance for proximal gradient descent algorithm (change in objective function value across previous three iterations)/</li>
-<li><span class="math inline">\(\texttt{quiet}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> Print some progress?</li>
-<li><span class="math inline">\(\texttt{inner.quiet}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> Print updates from proximal gradient descent algorithm? Should be used only for diagnosing tolerance since output can be verbose.</li>
+<li><span class="math inline">\(\texttt{X}\)</span>: an <span class="math inline">\(n \times p\)</span> matrix of predictors, unstandardized. Should not include an intercept – this is done internally;</li>
+<li><span class="math inline">\(\texttt{Y}\)</span>: a list with two components, each corresponding to one of the two response variables. Elements of each component should be integers from <span class="math inline">\(1\)</span> to <span class="math inline">\(K\)</span> where <span class="math inline">\(K\)</span> is the number of response categories for that response;</li>
+<li><span class="math inline">\(\texttt{ngamma}\)</span>: the number of candidate tuning parameters <span class="math inline">\(\gamma\)</span> to consider in cross-validation/model fitting;</li>
+<li><span class="math inline">\(\texttt{lambda.vec}\)</span>: a vector of candidate <span class="math inline">\(\lambda\)</span> values to consider in cross-validation/model fitting;</li>
+<li><span class="math inline">\(\texttt{nfolds}\)</span>: the number of folds to use for cross-validation. If one would rather not perform cross-validation, setting <span class="math inline">\(\texttt{nfolds = NULL}\)</span> fits the model for each of the pairs <span class="math inline">\((\gamma, \lambda)\)</span>, but does not perform cross-validation;</li>
+<li><span class="math inline">\(\texttt{delta}\)</span>: a parameter between 0 and 1 indicating the ratio from largest to smallest candidate <span class="math inline">\(\gamma\)</span> value, i.e., <span class="math inline">\(\min{\gamma} = \delta \max{\gamma}\)</span>;</li>
+<li><span class="math inline">\(\texttt{standardize}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> indicating whether predictors should be standardized for model fitting;</li>
+<li><span class="math inline">\(\texttt{tol}\)</span>: Convergence tolerance for proximal gradient descent algorithm (change in objective function value across previous three iterations);</li>
+<li><span class="math inline">\(\texttt{quiet}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> indicating whether progress should be printed after each model fit for all pairs <span class="math inline">\((\gamma, \lambda)\)</span>;</li>
+<li><span class="math inline">\(\texttt{inner.quiet}\)</span>: <span class="math inline">\(\texttt{TRUE/FALSE}\)</span> indicating whether progress should be printed after each iterations of the proximal gradient descent algorithm – note that this argument should only be <span class="math inline">\(\texttt{TRUE}\)</span> if users are diagnosing covergence tolerance as output can be quite verbose.</li>
 </ul>
 <p>For more on formatting, we suggest following the example data generating procedure above.</p>
 <pre class="r"><code>modfit &lt;- BvCat.cv(X, Y, ngamma = 10, 
-                  lambda.vec = rev(10^seq(-4, -1, length=5)), 
+                  lambda.vec = 10^seq(-1, -4, length=5), 
                   nfolds = 5, delta = .05, standardize = TRUE, 
                   tol = 1e-10,  quiet = FALSE, inner.quiet = TRUE)</code></pre>
 <pre><code>## lambda =  0.1 ; gamma =  0.2558115 ; nonzero =  6 
@@ -578,13 +578,13 @@ for(k in 1:ntest){
 ##  - attr(*, &quot;class&quot;)= chr &quot;BvCat&quot;</code></pre>
 <p>The output contains the following (omitting those with obvious meaning):</p>
 <ul>
-<li><span class="math inline">\(\texttt{beta}:\)</span> a sparse matrix containing the estimated regression coefficients for all pairs of tuning parameters. <span class="math inline">\(\textbf{Do not}\)</span> use these directly as they are not properly rescaled if <span class="math inline">\(\texttt{standardized = TRUE}\)</span>: rather, extract coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span> below.</li>
-<li><span class="math inline">\(D \in \mathbb{R}^{JK \times \binom{J}{2}\binom{K}{2}}\)</span> is the matrix used to impose the log-odds penalty.</li>
-<li><span class="math inline">\(\texttt{errs.joint}\)</span>: the joint misclassification rate for the <span class="math inline">\(\texttt{nfolds}\)</span> for each candidate pair of tuning parameters</li>
-<li><span class="math inline">\(\texttt{deviance}:\)</span> the deviance for each of the <span class="math inline">\(\texttt{nfolds}\)</span></li>
-<li><span class="math inline">\(\texttt{lambda.min.joint}\)</span> the <span class="math inline">\(\lambda\)</span> value leading to smallest average misclassification rate over the <span class="math inline">\(\texttt{nfolds}\)</span>.</li>
-<li><span class="math inline">\(\texttt{gamma.min.joint}\)</span> the <span class="math inline">\(\gamma\)</span> value leading to smallest average misclassification rate over the <span class="math inline">\(\texttt{nfolds}\)</span>.</li>
-<li><span class="math inline">\(\texttt{X.mean}\)</span> and <span class="math inline">\(\texttt{X.sd}\)</span>: the mean and standard deviation of the <span class="math inline">\(p\)</span> predictor variables (used for standardization/prediction in other functions).</li>
+<li><span class="math inline">\(\texttt{beta}:\)</span> a sparse matrix containing the estimated regression coefficients for all pairs of tuning parameters. <span class="math inline">\(\textbf{Do not}\)</span> use these directly as they are not properly rescaled if <span class="math inline">\(\texttt{standardized = TRUE}\)</span>: rather, extract coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span> below;</li>
+<li><span class="math inline">\(D \in \mathbb{R}^{JK \times \binom{J}{2}\binom{K}{2}}\)</span> is the matrix used to impose the log-odds penalty;</li>
+<li><span class="math inline">\(\texttt{errs.joint}\)</span>: the joint misclassification rate for the <span class="math inline">\(\texttt{nfolds}\)</span> for each candidate pair of tuning parameters;</li>
+<li><span class="math inline">\(\texttt{deviance}:\)</span> the deviance for each of the <span class="math inline">\(\texttt{nfolds}\)</span>;</li>
+<li><span class="math inline">\(\texttt{lambda.min.joint}\)</span> the <span class="math inline">\(\lambda\)</span> value leading to smallest average misclassification rate over the <span class="math inline">\(\texttt{nfolds}\)</span>;</li>
+<li><span class="math inline">\(\texttt{gamma.min.joint}\)</span> the <span class="math inline">\(\gamma\)</span> value leading to smallest average misclassification rate over the <span class="math inline">\(\texttt{nfolds}\)</span>;</li>
+<li><span class="math inline">\(\texttt{X.mean}\)</span> and <span class="math inline">\(\texttt{X.sd}\)</span>: the mean and standard deviation of the <span class="math inline">\(p\)</span> predictor variables (used for standardization/prediction in other functions);</li>
 <li><span class="math inline">\(\texttt{lambda.vec}\)</span> and <span class="math inline">\(\texttt{gamma.vec}\)</span>: the candidate tuning parameters <span class="math inline">\(\lambda\)</span> and <span class="math inline">\(\gamma\)</span> used for model fitting.</li>
 </ul>
 </div>
@@ -608,14 +608,14 @@ cat(misclass.joint, &quot;\n&quot;)</code></pre>
 misclass.joint.dev &lt;- sum(apply(YmatTest, 1, which.max) != preds.dev.mat)/length(Ytest[[1]])
 cat(misclass.joint.dev, &quot;\n&quot;)</code></pre>
 <pre><code>## 0.2558</code></pre>
-<p>Finally, we can extract the regression coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span>. When we use the argument <span class="math inline">\(\texttt{type=&quot;matrix&quot;}\)</span>, we get the matricized version of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, <span class="math inline">\(\hat\beta\)</span>, which is given by <span class="math display">\[ \hat\beta_{l,f(j,k)} = \hat{\boldsymbol{\beta}}_{l,j,k}, \quad\quad (l,j,k) \in \left\{1, \dots, p\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.\]</span> where <span class="math inline">\(f(j,k) = (k-1)J + j\)</span> for <span class="math inline">\((j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.\)</span> Note that <span class="math inline">\(\boldsymbol{\beta}_0\)</span> denotes the intercept term.</p>
+<p>Finally, we can extract the regression coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span>. When we use the argument <span class="math inline">\(\texttt{type=&quot;matrix&quot;}\)</span>, we get the matricized version of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, <span class="math inline">\(\hat\beta\)</span>, which is given by <span class="math display">\[ \hat\beta_{m,f(j,k)} = \hat{\boldsymbol{\beta}}_{m,j,k}, \quad\quad (m,j,k) \in \left\{1, \dots, p+1\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.\]</span> where <span class="math inline">\(f(j,k) = (k-1)J + j\)</span> for <span class="math inline">\((j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.\)</span> Note that <span class="math inline">\(\boldsymbol{\beta}_0\)</span> denotes the intercept term.</p>
 <pre class="r"><code>outBeta &lt;- BvCat.coef(modfit, type=&quot;matrix&quot;)
 str(outBeta)</code></pre>
 <pre><code>## List of 3
 ##  $ b0      : num [1:6] 0.0862 0.1196 -0.1713 0.187 0.0102 ...
 ##  $ beta    : num [1:200, 1:6] 0.19 0 0 0 -1.11 ...
 ##  $ classref: num [1:2, 1:6] 1 1 2 1 3 1 1 2 2 2 ...</code></pre>
-<p>Using the argument <span class="math inline">\(\texttt{type=&quot;array&quot;}\)</span> instead returns <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, the tensor-valued estimate.</p>
+<p>Using the argument <span class="math inline">\(\texttt{type=&quot;array&quot;}\)</span> instead returns <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, the arra-valued estimate.</p>
 <pre class="r"><code>outBetaArray &lt;- BvCat.coef(modfit, type=&quot;array&quot;)
 str(outBetaArray)</code></pre>
 <pre><code>## List of 3
