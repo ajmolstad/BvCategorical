@@ -624,7 +624,7 @@ BvCat.predict <- function(Xtest, fit, lambda = NULL, gamma=NULL, type="class"){
 	
 	if(type=="probabilities"){
 		preds <- array(0, dim=c(dim(Xtest)[1], fit$J, fit$K))
-		for(j in 1:K){
+		for(j in 1:fit$K){
 			preds[,,j] <- Pmat[,(1:fit$J) + ((j-1)*fit$J)]
 		}
 	}
