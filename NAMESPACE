@@ -3,3 +3,6 @@ export(BvCat.coef)
 export(BvCat.predict)
 
 importFrom("Matrix", "Matrix")
+importFrom("MASS", "ginv")
+importFrom("stats", "sd")
+importFrom("utils", "combn")

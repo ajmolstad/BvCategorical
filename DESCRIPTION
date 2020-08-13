@@ -9,3 +9,4 @@ Description: Perform cross-validation, prediction, and extract coefficients from
 License: GPL-2
 LazyData: TRUE
 NeedsCompilation: yes
+Imports: Matrix, MASS, utils, stats
