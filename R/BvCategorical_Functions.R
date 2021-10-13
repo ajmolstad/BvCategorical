@@ -212,7 +212,8 @@ BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6,
 		beta.k <- matrix(0, nrow=p+1, ncol=J*K)
 	}
 	
-	L0 <- 1/(sqrt(J*K)*sum(X^2)/n)
+	L0 <- n/(sqrt(J*K)*sum(X^2))
+	L <- L0*2000 
 	t <- 1
 	alphakm2 <- 1
 	alphakm1 <- 1
@@ -227,7 +228,6 @@ BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6,
 		# --------------------
 		# Update
 		# --------------------
-		L <- L0*2000 # can modify to improve performance
 		Atemp <- beta.km1 + ((alphakm2 - 1)/alphakm1)*(beta.km1 - beta.km2)
 		grad <- eval_grad(X, Atemp, Ymat)
 		lik <- eval_lik(X, Atemp, Ymat)
@@ -556,8 +556,11 @@ BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
 	if (class(fit)!="BvCat") {
 		stop('fit needs to be of class BvCat!')
 	}
-
-	beta.mat <- matrix(fit$beta[,ind], ncol=fit$J*fit$K)
+	if(fit$standardize){
+		beta.mat <- diag(c(1, 1/fit$X.sd))%*%matrix(fit$beta[,ind], ncol=fit$J*fit$K)
+	} else {
+		beta.mat <- matrix(fit$beta[,ind], ncol=fit$J*fit$K)
+	}
 	
 	if (type=="matrix") {
 		return(list("b0" = beta.mat[1,], "beta" = beta.mat[-1,], "classref" = classref))
