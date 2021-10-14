@@ -1,7 +1,7 @@
 ---
 title: "BvCategorical Example"
 author: "Aaron J. Molstad (amolstad@ufl.edu)"
-date: "7/5/2020"
+date: "10/13/2021"
 output:
   html_document: default
   pdf_document: default
