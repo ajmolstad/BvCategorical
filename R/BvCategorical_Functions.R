@@ -558,6 +558,7 @@ BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
 	}
 	if(fit$standardize){
 		beta.mat <- diag(c(1, 1/fit$X.sd))%*%matrix(fit$beta[,ind], ncol=fit$J*fit$K)
+		beta.mat[1,] <- beta.mat[1,] - crossprod(fit$X.mean, beta.mat[-1,])
 	} else {
 		beta.mat <- matrix(fit$beta[,ind], ncol=fit$J*fit$K)
 	}
