@@ -155,7 +155,7 @@ outPred <- BvCat.predict(Xtest = Xtest, modfit, type="class") # prediction using
 We can also perform prediction using the fitted model for other tuning parameter pairs:
 ```{r preds2, include = TRUE, cache=TRUE}
 devInds <- which(apply(modfit$deviance, c(1,2), mean) == min(apply(modfit$deviance, c(1,2), mean)), arr.ind=TRUE)
-outPred.dev <- BvCat.predict(Xtest = Xtest, modfit, lambda = modfit$lambda.vec[devInds[1,1]], gamma = modfit$gamma.vec[devInds[1,2]]) # prediction using tuning parameters which minimized classification error
+outPred.dev <- BvCat.predict(Xtest = Xtest, modfit, lambda = modfit$lambda.vec[devInds[1,1]], gamma = modfit$gamma.vec[devInds[1,2]]) # prediction using tuning parameters which minimized deviance
 
 preds.mat <- apply(outPred$preds, 1, function(x){(x[1]+(J*(x[2]-1)))})
 misclass.joint <- sum(apply(YmatTest, 1, which.max) != preds.mat)/length(Ytest[[1]])
@@ -166,7 +166,9 @@ misclass.joint.dev <- sum(apply(YmatTest, 1, which.max) != preds.dev.mat)/length
 cat(misclass.joint.dev, "\n")
 ```
 
-Finally, we can extract the regression coefficients using $\texttt{BvCat.coef}$. When we use the argument $\texttt{type="matrix"}$, we get the matricized version of $\hat{\boldsymbol{\beta}}$, $\hat\beta$, which is given by
+Finally, we can extract the regression coefficients using $\texttt{BvCat.coef}$. It is important to use this function rather than tryign to extracty the coefficients from the output of $\texttt{BvCat.cv}$ since $\texttt{BvCat.coef}$ will return coefficients on the original scale. 
+
+When we use the argument $\texttt{type="matrix"}$, we get the matricized version of $\hat{\boldsymbol{\beta}}$, $\hat\beta$, which is given by
 $$ \hat\beta_{m,f(j,k)} = \hat{\boldsymbol{\beta}}_{m,j,k}, \quad\quad (m,j,k) \in \left\{1, \dots, p+1\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.$$
 where $f(j,k) = (k-1)J + j$ for $(j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.$ Note that $\boldsymbol{\beta}_0$ denotes the intercept term.
 
@@ -175,11 +177,15 @@ outBeta <- BvCat.coef(modfit, type="matrix")
 str(outBeta)
 ```
 
-Using the argument $\texttt{type="array"}$ instead returns $\hat{\boldsymbol{\beta}}$, the arra-valued estimate. 
+Using the argument $\texttt{type="array"}$ instead returns $\hat{\boldsymbol{\beta}}$, the array-valued estimate. 
 ```{r getCoefArray, include = TRUE, cache=TRUE}
 outBetaArray <- BvCat.coef(modfit, type="array")
 str(outBetaArray)
 ```
 
-
-
+Let's not verify that the results of both functions agree in terms of their predicted probabilties. 
+```{r checkProbs, include=TRUE, cach=TRUE}
+outPred.check <- BvCat.predict(Xtest = Xtest[1,,drop=FALSE], modfit, type="probabilities") 
+outCoef.check <- BvCat.coef(modfit)
+l0 <- exp(outCoef.check$b0 + Xtest[1,,drop=FALSE]%*%outCoef.check$beta)
+rbind(c(l0/sum(l0)),c(unlist(outPred.check))) ## both approaches agree

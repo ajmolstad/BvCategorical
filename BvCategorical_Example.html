@@ -585,7 +585,7 @@ levelplot(t(apply(modfit$errs.joint, c(1,2), mean)), xlab=expression(paste(gamma
 <pre class="r"><code>outPred &lt;- BvCat.predict(Xtest = Xtest, modfit, type=&quot;class&quot;) # prediction using tuning parameters which minimized classification error</code></pre>
 <p>We can also perform prediction using the fitted model for other tuning parameter pairs:</p>
 <pre class="r"><code>devInds &lt;- which(apply(modfit$deviance, c(1,2), mean) == min(apply(modfit$deviance, c(1,2), mean)), arr.ind=TRUE)
-outPred.dev &lt;- BvCat.predict(Xtest = Xtest, modfit, lambda = modfit$lambda.vec[devInds[1,1]], gamma = modfit$gamma.vec[devInds[1,2]]) # prediction using tuning parameters which minimized classification error
+outPred.dev &lt;- BvCat.predict(Xtest = Xtest, modfit, lambda = modfit$lambda.vec[devInds[1,1]], gamma = modfit$gamma.vec[devInds[1,2]]) # prediction using tuning parameters which minimized deviance
 
 preds.mat &lt;- apply(outPred$preds, 1, function(x){(x[1]+(J*(x[2]-1)))})
 misclass.joint &lt;- sum(apply(YmatTest, 1, which.max) != preds.mat)/length(Ytest[[1]])
@@ -595,20 +595,29 @@ cat(misclass.joint, &quot;\n&quot;)</code></pre>
 misclass.joint.dev &lt;- sum(apply(YmatTest, 1, which.max) != preds.dev.mat)/length(Ytest[[1]])
 cat(misclass.joint.dev, &quot;\n&quot;)</code></pre>
 <pre><code>## 0.2558</code></pre>
-<p>Finally, we can extract the regression coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span>. When we use the argument <span class="math inline">\(\texttt{type=&quot;matrix&quot;}\)</span>, we get the matricized version of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, <span class="math inline">\(\hat\beta\)</span>, which is given by <span class="math display">\[ \hat\beta_{m,f(j,k)} = \hat{\boldsymbol{\beta}}_{m,j,k}, \quad\quad (m,j,k) \in \left\{1, \dots, p+1\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.\]</span> where <span class="math inline">\(f(j,k) = (k-1)J + j\)</span> for <span class="math inline">\((j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.\)</span> Note that <span class="math inline">\(\boldsymbol{\beta}_0\)</span> denotes the intercept term.</p>
+<p>Finally, we can extract the regression coefficients using <span class="math inline">\(\texttt{BvCat.coef}\)</span>. It is important to use this function rather than tryign to extracty the coefficients from the output of <span class="math inline">\(\texttt{BvCat.cv}\)</span> since <span class="math inline">\(\texttt{BvCat.coef}\)</span> will return coefficients on the original scale.</p>
+<p>When we use the argument <span class="math inline">\(\texttt{type=&quot;matrix&quot;}\)</span>, we get the matricized version of <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, <span class="math inline">\(\hat\beta\)</span>, which is given by <span class="math display">\[ \hat\beta_{m,f(j,k)} = \hat{\boldsymbol{\beta}}_{m,j,k}, \quad\quad (m,j,k) \in \left\{1, \dots, p+1\right\} \times \left\{1, \dots, J \right\} \times \left\{1, \dots, K\right\}.\]</span> where <span class="math inline">\(f(j,k) = (k-1)J + j\)</span> for <span class="math inline">\((j,k) \in \left\{1, \dots, J\right\} \times \left\{1, \dots, K\right\}.\)</span> Note that <span class="math inline">\(\boldsymbol{\beta}_0\)</span> denotes the intercept term.</p>
 <pre class="r"><code>outBeta &lt;- BvCat.coef(modfit, type=&quot;matrix&quot;)
 str(outBeta)</code></pre>
 <pre><code>## List of 3
-##  $ b0      : num [1:6] 0.0862 0.1196 -0.1713 0.187 0.0102 ...
+##  $ b0      : num [1:6] 0.09511 0.122917 -0.207627 0.239992 -0.000361 ...
 ##  $ beta    : num [1:200, 1:6] 0.186 0 0 0 -1.066 ...
 ##  $ classref: num [1:2, 1:6] 1 1 2 1 3 1 1 2 2 2 ...</code></pre>
-<p>Using the argument <span class="math inline">\(\texttt{type=&quot;array&quot;}\)</span> instead returns <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, the arra-valued estimate.</p>
+<p>Using the argument <span class="math inline">\(\texttt{type=&quot;array&quot;}\)</span> instead returns <span class="math inline">\(\hat{\boldsymbol{\beta}}\)</span>, the array-valued estimate.</p>
 <pre class="r"><code>outBetaArray &lt;- BvCat.coef(modfit, type=&quot;array&quot;)
 str(outBetaArray)</code></pre>
 <pre><code>## List of 3
-##  $ b0      : num [1, 1:3, 1:2] 0.0862 0.1196 -0.1713 0.187 0.0102 ...
+##  $ b0      : num [1, 1:3, 1:2] 0.09511 0.122917 -0.207627 0.239992 -0.000361 ...
 ##  $ beta    : num [1:200, 1:3, 1:2] 0.186 0 0 0 -1.066 ...
 ##  $ classref: num [1:2, 1:6] 1 1 2 1 3 1 1 2 2 2 ...</code></pre>
+<p>Let’s not verify that the results of both functions agree in terms of their predicted probabilties.</p>
+<pre class="r"><code>outPred.check &lt;- BvCat.predict(Xtest = Xtest[1,,drop=FALSE], modfit, type=&quot;probabilities&quot;) 
+outCoef.check &lt;- BvCat.coef(modfit)
+l0 &lt;- exp(outCoef.check$b0 + Xtest[1,,drop=FALSE]%*%outCoef.check$beta)
+rbind(c(l0/sum(l0)),c(unlist(outPred.check))) ## both approaches agree</code></pre>
+<pre><code>##       preds1    preds2    preds3     preds4      preds5     preds6
+## [1,] 0.42501 0.1372561 0.3405905 0.07316204 0.008504305 0.01547703
+## [2,] 0.42501 0.1372561 0.3405905 0.07316204 0.008504305 0.01547703</code></pre>
 </div>
 
 
