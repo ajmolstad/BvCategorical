@@ -19,9 +19,8 @@ BvCat_Intercept <- function(Y) {
 	# ----------------------------------
 	# preliminaries
 	# -----------------------------------
-	n <- dim(X)[1]
-	p <- dim(X)[2] - 1
-
+	n <- length(Y[[1]])
+	
 	# --------------------------------------
 	# get number of response categories
 	# --------------------------------------
@@ -29,7 +28,7 @@ BvCat_Intercept <- function(Y) {
 	K <- length(unique(Y[[2]]))
 	Ymat <- matrix(0, nrow=n, ncol=J*K)
 	for (k in 1:n) {
-	Ymat[k,(Y[[2]][k]-1)*J + Y[[1]][k]] <- 1
+		Ymat[k,(Y[[2]][k]-1)*J + Y[[1]][k]] <- 1
 	}
 	margPi <- colSums(Ymat)/n
 	beta <- log(margPi) 
@@ -173,7 +172,7 @@ eval_grad <- function(X, beta, Ymat) {
 # Main APG function
 #
 # ----------------------------------------------
-BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6, 
+BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol, 
 			max.iter = 1e4, beta.warm = NULL, inner.quiet = TRUE) {
 	
 	# ------------------------------
@@ -295,8 +294,8 @@ BvCat_AccProxGD <- function(Y, X, D, lambda, gamma, tol = 1e-6,
 # Main function for fitting solution path + CV
 #
 # -----------------------------------------------------
-BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfolds = NULL, delta = .1, 
-										standardize = TRUE, tol = 1e-6, quiet = TRUE, 
+BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfolds = 5, delta = .1, 
+										standardize = TRUE, tol = 1e-8, quiet = TRUE, 
 										inner.quiet= TRUE) {
 	
 	 
@@ -387,7 +386,7 @@ BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfo
 		beta.old <- rbind(interceptTemp, matrix(0, nrow=p, ncol=J*K))
 		for (kk in 1:length(gamma.vec)) {
 			temp <- BvCat_AccProxGD(
-					Y = Y, X = x, D=D, lambda = lambda.vec[jj], gamma = gamma.vec[kk], tol = tol,
+					Y = Y, X = x, D = D, lambda = lambda.vec[jj], gamma = gamma.vec[kk], tol = tol,
 					max.iter = 1e4, beta.warm = beta.old, inner.quiet = inner.quiet)
 			beta.old <- temp$beta
 			beta.full[,(jj-1)*length(gamma.vec) + kk] <- c(beta.old)
@@ -443,7 +442,7 @@ BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfo
 			if (standardize) {      
 				x.inner <- (X[-cv.index[[k]], ] - tcrossprod(rep(1, ntrain), apply(X[-cv.index[[k]],], 2, mean)))/tcrossprod(rep(1, ntrain),apply(X[-cv.index[[k]], ], 2, sd))
 			} else {
-				x.innd <- X[-cv.index[[k]], ]
+				x.inner <- X[-cv.index[[k]], ]
 			}
 			x.inner <- cbind(1, x.inner)
 			Ytrain <- Y
@@ -478,7 +477,7 @@ BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfo
 				beta.old <- rbind(interceptTemp, matrix(0, nrow=p, ncol=J*K))
 				for (kk in 1:length(gamma.vec)) {
 					temp <- BvCat_AccProxGD(
-						Y = Ytrain, X = x.inner, D=D, lambda = lambda.vec[jj], gamma = gamma.vec[kk], tol = tol,
+						Y = Ytrain, X = x.inner, D = D, lambda = lambda.vec[jj], gamma = gamma.vec[kk], tol = tol,
 						max.iter = 1e4, beta.warm = beta.old, inner.quiet = inner.quiet)
 					beta.old <- temp$beta
 					lleval <- exp(crossprod(t(x.test), beta.old))
@@ -536,7 +535,6 @@ BvCat.cv <- function(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), nfo
 # -----------------------------------------------------
 BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
 	
-	warnings("Note: coefficients are on the scale of standardized predictors!")
 	if (is.null(lambda) & is.null(gamma)) {
 		lam.ind <- which(fit$lambda.vec == fit$lambda.min.joint)
 		gamma.ind <- which(fit$gamma.vec == fit$gamma.min.joint)
@@ -562,7 +560,9 @@ BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
 	} else {
 		beta.mat <- matrix(fit$beta[,ind], ncol=fit$J*fit$K)
 	}
-	
+	if(type!="matrix" & type!="tensor"){
+		stop('type must be either \"matrix\" or \"tensor\"')
+	}
 	if (type=="matrix") {
 		return(list("b0" = beta.mat[1,], "beta" = beta.mat[-1,], "classref" = classref))
 	} else {
@@ -584,8 +584,7 @@ BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
 # -----------------------------------------------------
 BvCat.predict <- function(Xtest, fit, lambda = NULL, gamma=NULL, type="class") {
 	
-	warnings("Note: coefficients are on the scale of standardized predictors!")
-	 if (is.null(lambda) & is.null(gamma)) {
+	if (is.null(lambda) & is.null(gamma)) {
 		lam.ind <- which(fit$lambda.vec == fit$lambda.min.joint)
 		gamma.ind <- which(fit$gamma.vec == fit$gamma.min.joint)
 		ind <- (lam.ind-1)*length(fit$gamma.vec) + gamma.ind
