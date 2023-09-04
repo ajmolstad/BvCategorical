@@ -26,4 +26,4 @@ If you use any of the functions from the package, please cite the article linked
 }
 ```
 ### Usage directions
-Please visit [this example page]([https://ajmolstad.github.io/docs/HierMultinomExample.html](https://ajmolstad.github.io/docs/BvCategorical_Example.html)) for details on implementation and usage. 
+Please visit [this example page](https://ajmolstad.github.io/docs/BvCategorical_Example.html) for details on implementation and usage. 
