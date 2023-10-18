@@ -2,7 +2,7 @@
 An R package for fitting the bivariate categorical response regression model in high dimensions, as described  by [A likelihood-based approach for multivariate categorical response regression](https://www.tandfonline.com/doi/abs/10.1080/01621459.2021.1999819?journalCode=uasa20). Please contact [amolstad@umn.edu](mailto:amolstad@umn.edu) with any questions or comments. 
 
 ### Installation
-BvCategorical can be loaded directly into R through the the `devtools` package:
+BvCategorical can be loaded directly into R through the `devtools` package:
 ```
 install.packages("devtools")
 library(devtools)
