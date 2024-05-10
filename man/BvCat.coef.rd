@@ -1,18 +1,23 @@
 \name{BvCat.coef}
 \alias{BvCat.coef}
 \title{Function to extract estimated regression coefficients for penalized bivariate multinomial logistic regression.}
+\description{A function to extract coefficients along the solution path for the penalized bivariate multinomial logistic regression.}
 \usage{
 BvCat.coef(fit, lambda = NULL, gamma = NULL, type="matrix")
 }
 \arguments{
 \item{fit}{An fitted model object of type \code{BvCat} obtained from the \code{BvCat.cv} function. }
-\item{lambda}{Value of tuning parameter \eqn{\lambda} at which to extract coefficients. If \code{NULL}, will use values which minimized joint misclassificaiton error (assuming \code{nfolds} \eqn{ > 2}). If not \code{NULL}, must be a value from \code{fit$lambda.vec}.}
-\item{gamma}{Value of tuning parameter \eqn{\gamma} at which to extract coefficients. If \code{NULL}, will use values which minimized joint misclassificaiton error (assuming \code{nfolds} \eqn{ > 2}). If not \code{NULL}, must be a value from \code{fit$gamma.vec}.}
-\item{type}{In what form should the coefficients be returned? options are "\code{matrix}" or "\code{tensor}". If "\code{matrix}", will return as \eqn{p \times JK} matrix. If "tensor", will return a \eqn{p \times J \times K} array. }
+\item{lambda}{Value of tuning parameter \eqn{\lambda} at which to extract coefficients. 
+If \code{NULL}, will use values which minimized joint misclassificaiton error (assuming \code{nfolds} \eqn{ > 2}). If not \code{NULL}, must be a value from \code{fit$lambda.vec}.}
+\item{gamma}{Value of tuning parameter \eqn{\gamma} at which to extract coefficients. 
+If \code{NULL}, will use values which minimized joint misclassificaiton error (assuming \code{nfolds} \eqn{ > 2}). If not \code{NULL}, must be a value from \code{fit$gamma.vec}.}
+\item{type}{In what form should the coefficients be returned? options are "\code{matrix}" or "\code{tensor}". 
+If "\code{matrix}", will return as \eqn{p \times JK} matrix. If "tensor", will return a \eqn{p \times J \times K} array. }
 }
 \value{
  \item{b0}{Estimated intercept. Either \eqn{JK}-dimensional vector or \eqn{J \times K} matrix, depending on \code{type}.}
- \item{beta}{Estimated regression coefficients on the original scale of the predictors. Either \eqn{p \times JK} matrix or \eqn{p \times J \times K} array, depending on \code{type}.}
+ \item{beta}{Estimated regression coefficients on the original scale of the predictors. 
+ Either \eqn{p \times JK} matrix or \eqn{p \times J \times K} array, depending on \code{type}.}
 }
 
 \examples{
@@ -64,13 +69,18 @@ for(k in 1:n){
   Y[[2]][k] <- refClasses[2,which(Ymat[k,]==1)]
 }
 
+# ---------------------------------------------------
+# Running the following will take around 60 seconds
+# --------------------------------------------------
+
+\dontrun{
 # ----------------------------------------
 # Fit model with cross-validation
 # ----------------------------------------
 modfit <- BvCat.cv(X, Y, ngamma = 20, 
-                   lambda.vec = 10^seq(-4, 0, length=5), 
-                   nfolds = 5, delta = .01, standardize = TRUE, 
-                   tol = 1e-8,  quiet = FALSE, inner.quiet = TRUE)
+                  lambda.vec = 10^seq(-4, 0, length=5), 
+                  nfolds = 5, delta = .01, standardize = TRUE, 
+                  tol = 1e-8,  quiet = FALSE, inner.quiet = TRUE)
 
 # ---------------------------------------
 # CV errors
@@ -83,7 +93,8 @@ apply(modfit$deviance, c(1,2), mean)
 # -----------------------------------------------------
 temp.coef <- BvCat.coef(modfit, type="matrix")
 temp.coef.tensor <- BvCat.coef(modfit, type="tensor")
-temp.coef.untuned <- BvCat.coef(modfit, lambda = modfit$lambda.vec[1], gamma = modfit$gamma.vec[10], type="matrix")
+temp.coef.untuned <- BvCat.coef(modfit, lambda = modfit$lambda.vec[1], 
+ gamma = modfit$gamma.vec[10], type="matrix")
 
 
 
@@ -98,11 +109,12 @@ temp.predict.probs <- BvCat.predict(Xtest, modfit, type="probabilities")
 # Fit model with no cross-validation
 # ----------------------------------------
 modfit.noCV <- BvCat.cv(X, Y, ngamma = 20, 
-                   lambda.vec = 10^seq(-1, -4, length=5), 
-                   nfolds = NULL, delta = .01, standardize = TRUE, 
-                   tol = 1e-8,  quiet = TRUE, inner.quiet = TRUE)
+                 lambda.vec = 10^seq(-1, -4, length=5), 
+                  nfolds = NULL, delta = .01, standardize = TRUE, 
+                  tol = 1e-8,  quiet = TRUE, inner.quiet = TRUE)
 
 # temp.coef <- BvCat.coef(modfit.noCV, type="matrix") # returns errror
-temp.coef.noCV <- BvCat.coef(modfit.noCV, lambda = modfit$lambda.vec[1], gamma = modfit$gamma.vec[10], type="matrix")
-
+temp.coef.noCV <- BvCat.coef(modfit.noCV, lambda = modfit$lambda.vec[1], 
+ gamma = modfit$gamma.vec[10], type="matrix")
+}
 }

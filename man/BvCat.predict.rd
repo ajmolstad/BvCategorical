@@ -1,6 +1,7 @@
 \name{BvCat.predict}
 \alias{BvCat.predict}
 \title{Function to perform prediction based on fitted penalized bivariate multinomial logistic regression model.}
+\description{A function for prediction using a fitted model object of class \code{BvCat}, obtained from the function \code{BvCat.cv}. }
 \usage{
   BvCat.predict(Xtest, fit, lambda = NULL, gamma = NULL, type="class")
 }
@@ -65,13 +66,18 @@ for(k in 1:n){
   Y[[2]][k] <- refClasses[2,which(Ymat[k,]==1)]
 }
 
+# ---------------------------------------------------
+# Running the following will take around 60 seconds
+# --------------------------------------------------
+
+\dontrun{
 # ----------------------------------------
 # Fit model with cross-validation
 # ----------------------------------------
 modfit <- BvCat.cv(X, Y, ngamma = 20, 
-                   lambda.vec = 10^seq(-4, 0, length=5), 
-                   nfolds = 5, delta = .01, standardize = TRUE, 
-                   tol = 1e-8,  quiet = FALSE, inner.quiet = TRUE)
+                  lambda.vec = 10^seq(-4, 0, length=5), 
+                  nfolds = 5, delta = .01, standardize = TRUE, 
+                  tol = 1e-8,  quiet = FALSE, inner.quiet = TRUE)
 
 # ---------------------------------------
 # CV errors
@@ -84,7 +90,8 @@ apply(modfit$deviance, c(1,2), mean)
 # -----------------------------------------------------
 temp.coef <- BvCat.coef(modfit, type="matrix")
 temp.coef.tensor <- BvCat.coef(modfit, type="tensor")
-temp.coef.untuned <- BvCat.coef(modfit, lambda = modfit$lambda.vec[1], gamma = modfit$gamma.vec[10], type="matrix")
+temp.coef.untuned <- BvCat.coef(modfit, lambda = modfit$lambda.vec[1], 
+ gamma = modfit$gamma.vec[10], type="matrix")
 
 
 
@@ -99,11 +106,12 @@ temp.predict.probs <- BvCat.predict(Xtest, modfit, type="probabilities")
 # Fit model with no cross-validation
 # ----------------------------------------
 modfit.noCV <- BvCat.cv(X, Y, ngamma = 20, 
-                   lambda.vec = 10^seq(-1, -4, length=5), 
-                   nfolds = NULL, delta = .01, standardize = TRUE, 
-                   tol = 1e-8,  quiet = TRUE, inner.quiet = TRUE)
+                 lambda.vec = 10^seq(-1, -4, length=5), 
+                  nfolds = NULL, delta = .01, standardize = TRUE, 
+                  tol = 1e-8,  quiet = TRUE, inner.quiet = TRUE)
 
 # temp.coef <- BvCat.coef(modfit.noCV, type="matrix") # returns errror
-temp.coef.noCV <- BvCat.coef(modfit.noCV, lambda = modfit$lambda.vec[1], gamma = modfit$gamma.vec[10], type="matrix")
-
+temp.coef.noCV <- BvCat.coef(modfit.noCV, lambda = modfit$lambda.vec[1], 
+ gamma = modfit$gamma.vec[10], type="matrix")
+}
 }

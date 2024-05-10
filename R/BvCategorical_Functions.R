@@ -544,16 +544,16 @@ BvCat.coef <- function(fit, lambda = NULL, gamma = NULL, type="matrix") {
   classref[1,] <- rep(1:fit$J, fit$K)
   classref[2,] <- rep(1:fit$K, each=fit$J)
 
-  if (class(fit)!="BvCat") {
+  if (!inherits(fit, "BvCat")) {
     stop('fit needs to be of class BvCat!')
   }
-  if(fit$standardize){
+  if(fit$standardize) {
     beta.mat <- diag(c(1, 1/fit$X.sd))%*%matrix(fit$beta[,ind], ncol=fit$J*fit$K)
     beta.mat[1,] <- beta.mat[1,] - crossprod(fit$X.mean, beta.mat[-1,])
   } else {
     beta.mat <- matrix(fit$beta[,ind], ncol=fit$J*fit$K)
   }
-  if(type!="matrix" & type!="tensor"){
+  if (type!="matrix" & type!="tensor"){
     stop('type must be either \"matrix\" or \"tensor\"')
   }
   if (type=="matrix") {
@@ -590,7 +590,7 @@ BvCat.predict <- function(Xtest, fit, lambda = NULL, gamma=NULL, type="class") {
     ind <- (lam.ind-1)*length(fit$gamma.vec) + gamma.ind
   }
   
-  if (class(fit)!="BvCat") {
+  if (!inherits(fit, "BvCat")) {
     stop('fit needs to be of class BvCat!')
   }
   
