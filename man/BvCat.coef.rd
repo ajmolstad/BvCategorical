@@ -1,6 +1,6 @@
 \name{BvCat.coef}
 \alias{BvCat.coef}
-\title{Function to extract estimated regression coefficients for penalized bivariate multinomial logistic regression.}
+\title{Extract estimated regression coefficients for penalized bivariate multinomial logistic regression.}
 \description{A function to extract coefficients along the solution path for the penalized bivariate multinomial logistic regression.}
 \usage{
 BvCat.coef(fit, lambda = NULL, gamma = NULL, type="matrix")

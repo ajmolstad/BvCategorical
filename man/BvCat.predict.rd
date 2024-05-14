@@ -1,6 +1,6 @@
 \name{BvCat.predict}
 \alias{BvCat.predict}
-\title{Function to perform prediction based on fitted penalized bivariate multinomial logistic regression model.}
+\title{Predict with a fitted penalized bivariate multinomial logistic regression model.}
 \description{A function for prediction using a fitted model object of class \code{BvCat}, obtained from the function \code{BvCat.cv}. }
 \usage{
   BvCat.predict(Xtest, fit, lambda = NULL, gamma = NULL, type="class")

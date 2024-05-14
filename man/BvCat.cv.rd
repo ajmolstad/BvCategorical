@@ -1,6 +1,6 @@
 \name{BvCat.cv}
 \alias{BvCat.cv}
-\title{Function perform cross-validation and fit the penalized bivariate multinomial logistic regression.}
+\title{Perform cross-validation and fit the penalized bivariate multinomial logistic regression.}
 \description{A function for performing cross-validation to select the tuning parameter for the penalized bivariate multinomial logistic regression.}
 \usage{
 BvCat.cv(X, Y, ngamma = 100, lambda.vec = seq(.01,1, length=10), 
