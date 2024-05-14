@@ -25,5 +25,5 @@ If you use any of the functions from the package, please cite the article linked
   doi = {10.1080/01621459.2021.1999819},
 }
 ```
-### Usage directions
+### Vignette
 Please visit [this example page](https://ajmolstad.github.io/docs/BvCategorical_Example.html) for details on implementation and usage. 
